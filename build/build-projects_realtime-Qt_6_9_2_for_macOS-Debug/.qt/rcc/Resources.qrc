@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="/">
+    <file alias="resources/shaders/default.frag">/Users/edouard/Documents/US/Brown/CSCI_1230/proj5-edouardclocheret/resources/shaders/default.frag</file>
+    <file alias="resources/shaders/default.vert">/Users/edouard/Documents/US/Brown/CSCI_1230/proj5-edouardclocheret/resources/shaders/default.vert</file>
+  </qresource>
+</RCC>
+

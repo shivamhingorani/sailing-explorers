@@ -363,10 +363,9 @@ void Realtime::mouseMoveEvent(QMouseEvent *event) {
 
     update();
 }
-// glm::mat4 rotateY(float angle) {
-//     return glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0,1,0));
-// }
 
+
+//boat rotates around its center not center of the world
 glm::mat4 rotateAroundLocalY(const glm::mat4 &m, float angle) {
     // Rotate around local Y axis
     glm::vec3 pos = glm::vec3(m[3]);       // save current position
@@ -419,83 +418,6 @@ void Realtime::timerEvent(QTimerEvent *event) {
     update(); // trigger repaint
 }
 
-
-
-// glm::mat4 rotateY(float angle) {
-//     return glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0,1,0));
-// }
-
-// void Realtime::timerEvent(QTimerEvent *event) {
-//     int elapsedms   = m_elapsedTimer.elapsed();
-//     float deltaTime = elapsedms * 0.001f;
-//     m_elapsedTimer.restart();
-
-//     // Use deltaTime and m_keyMap here to move around
-//     glm::vec3 look_n = glm::normalize(m_renderData.cameraData.look);
-//     glm::vec3 up_n = glm::normalize(m_renderData.cameraData.up);
-
-//     float saling_speed = 0.01f;
-
-//     if (m_keyMap[Qt::Key_I]) {
-//         translateCamera( look_n* 5.f *deltaTime );
-//     }
-
-//     if (m_keyMap[Qt::Key_O]) {
-//         translateCamera( -look_n* 5.f *deltaTime );
-//     }
-
-//     if (m_keyMap[Qt::Key_W]) {
-//         glm::vec3 dir = glm::vec3(1,0,0) * saling_speed;  // land motion direction
-//         float yaw = -glm::half_pi<float>();               // orientation of non-land
-
-//         for (RenderShapeData &shape : m_renderData.shapes) {
-//             if (shape.is_land) {
-//                 shape.ctm = glm::translate(shape.ctm, dir);
-//             } else {
-//                 // rotate object around its own origin (yaw only)
-//                 shape.ctm = rotateY(yaw) * shape.ctm;
-//             }
-//         }
-//     }
-//     if (m_keyMap[Qt::Key_S]) {
-//         glm::vec3 mx_axis(-1.0,0.0,0.0);
-//         mx_axis *= saling_speed;
-//         for (RenderShapeData &shape : m_renderData.shapes) {
-//             if (shape.is_land) {
-//                 shape.ctm = glm::translate(shape.ctm, mx_axis);
-//             }
-//         }
-//     }
-//     if (m_keyMap[Qt::Key_A]) {
-//         glm::vec3 z_axis(0.0,0.0,1.0);
-//         z_axis *= saling_speed;
-//         for (RenderShapeData &shape : m_renderData.shapes) {
-//             if (shape.is_land) {
-//                 shape.ctm = glm::translate(shape.ctm, z_axis);
-//             }
-//         }
-//     }
-//     if (m_keyMap[Qt::Key_D]) {
-//         glm::vec3 mz_axis(0.0,0.0,-1.0);
-//         mz_axis *= saling_speed;
-//         for (RenderShapeData &shape : m_renderData.shapes) {
-//             if (shape.is_land) {
-//                 shape.ctm = glm::translate(shape.ctm, mz_axis);
-//             }
-//         }
-//     }
-
-//     if (m_keyMap[Qt::Key_Space]) {
-//         glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
-//         translateCamera( dir * 5.f *deltaTime );
-//     }
-//     // if (m_keyMap[Qt::Key_Control]) {
-//     //     glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
-//     //     translateCamera( -dir * 5.f *deltaTime );
-//     // }
-
-//     update(); // asks for a PaintGL() call to occur
-// }
 
 // DO NOT EDIT
 void Realtime::saveViewportImage(std::string filePath) {

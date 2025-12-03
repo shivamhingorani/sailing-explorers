@@ -9,6 +9,7 @@ struct RenderShapeData {
     ScenePrimitive primitive;
     glm::mat4 ctm; // the cumulative transformation matrix
     glm::mat4 i_ctm;
+    glm::mat4 local_ctm;
     bool is_land = false;
 };
 

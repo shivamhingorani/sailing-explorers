@@ -143,7 +143,7 @@ private:
     void paintVel(bool show_in_x);
     void paintBlurredScene();
 
-
+    glm::mat4 m_boatCTM = glm::mat4(1.0f);
 
 
 };

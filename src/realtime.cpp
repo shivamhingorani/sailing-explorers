@@ -202,21 +202,21 @@ void Realtime::resizeGL(int w, int h) {
     //glViewport(0, 0, size().width() * m_devicePixelRatio, size().height() * m_devicePixelRatio);
     glViewport(0, 0, w * m_devicePixelRatio, h * m_devicePixelRatio);
     // Students: anything requiring OpenGL calls when the program starts should be done here
-    //if (m_glReady){
-        rebuildGeometry();
-        updateProjMat();
-        updateViewMat();
-    //} //because uses width and height for the aspect ratio
+
+    rebuildGeometry();
+    updateProjMat();
+    updateViewMat();
+    //because uses width and height for the aspect ratio
 }
 
 void Realtime::sceneChanged() {
     m_lights4GPU.clear();
     SceneParser::parse(settings.sceneFilePath, m_renderData);
-    //if (m_glReady){
-        rebuildGeometry();
-        updateProjMat();
-        updateViewMat();
-    //}
+
+    rebuildGeometry();
+    updateProjMat();
+    updateViewMat();
+
 
     // Ask Qt to repaint the OpenGL widget
     update();
@@ -226,12 +226,10 @@ void Realtime::sceneChanged() {
 void Realtime::settingsChanged() {
     m_lights4GPU.clear();
 
-    //if (m_glReady){
-        rebuildGeometry();
-        updateProjMat();
-        updateViewMat();
+    rebuildGeometry();
+    updateProjMat();
+    updateViewMat();
 
-    //}
     update(); // asks for a PaintGL() call to occur
 }
 
@@ -305,27 +303,67 @@ void Realtime::mouseReleaseEvent(QMouseEvent *event) {
     }
 }
 
+
 void Realtime::mouseMoveEvent(QMouseEvent *event) {
-    if (m_mouseDown) {
-        int posX = event->position().x();
-        int posY = event->position().y();
-        int deltaX = posX - m_prev_mouse_pos.x;
-        int deltaY = posY - m_prev_mouse_pos.y;
-        m_prev_mouse_pos = glm::vec2(posX, posY);
+    if (!m_mouseDown) return;
 
-        // Use deltaX and deltaY here to rotate
+    float sens = 0.01f;
 
-        float sens =0.01f;
-        glm::vec3 look_n = glm::normalize(m_renderData.cameraData.look);
-        glm::vec3 up_n = glm::normalize(m_renderData.cameraData.up);
+    int posX = event->position().x();
+    int posY = event->position().y();
+    int deltaX = posX - m_prev_mouse_pos.x;
+    int deltaY = posY - m_prev_mouse_pos.y;
+    m_prev_mouse_pos = glm::vec2(posX, posY);
 
-        rotateCamera(deltaX*sens, glm::vec3(0.f,1.f,0.f));
-        glm::vec3 axis = glm::cross(look_n,up_n);
-        rotateCamera(deltaY*sens, axis);
 
-        update(); // asks for a PaintGL() call to occur
-    }
+    glm::vec4 center(0.f); //orbit arount the origin = boat position
+
+    glm::vec4 pos = m_renderData.cameraData.pos;
+    glm::vec4 rel = pos - center;
+
+    float yaw = deltaX * sens;
+    glm::vec3 axisY(0.f, 1.f, 0.f);
+
+    float c = cos(yaw), s = sin(yaw), t = 1 - c;
+    glm::vec3 a = glm::normalize(axisY);
+
+    glm::mat4 R_yaw(
+        t*a.x*a.x + c,       t*a.x*a.y - s*a.z, t*a.x*a.z + s*a.y, 0,
+        t*a.x*a.y + s*a.z,   t*a.y*a.y + c,     t*a.y*a.z - s*a.x, 0,
+        t*a.x*a.z - s*a.y,   t*a.y*a.z + s*a.x, t*a.z*a.z + c,     0,
+        0,                   0,                 0,                 1
+        );
+
+    rel = glm::vec4(R_yaw * rel);
+    rotateCamera(yaw, axisY);
+
+    float pitch = deltaY * sens;
+
+    glm::vec3 look = glm::normalize(center - (rel + center));
+    glm::vec3 up   = glm::normalize(m_renderData.cameraData.up);
+    glm::vec3 right = glm::normalize(glm::cross(look, up));
+
+    a = glm::normalize(right);
+    c = cos(pitch); s = sin(pitch); t = 1 - c;
+
+    glm::mat4 R_pitch(
+        t*a.x*a.x + c,       t*a.x*a.y - s*a.z, t*a.x*a.z + s*a.y, 0,
+        t*a.x*a.y + s*a.z,   t*a.y*a.y + c,     t*a.y*a.z - s*a.x, 0,
+        t*a.x*a.z - s*a.y,   t*a.y*a.z + s*a.x, t*a.z*a.z + c,     0,
+        0,                   0,                 0,                 1
+        );
+
+    rel = R_pitch * rel;
+
+    rotateCamera(pitch, right);
+
+    m_renderData.cameraData.pos = center + rel;
+    m_renderData.cameraData.look =
+        glm::normalize(center - m_renderData.cameraData.pos);
+
+    update();
 }
+
 
 void Realtime::timerEvent(QTimerEvent *event) {
     int elapsedms   = m_elapsedTimer.elapsed();
@@ -336,29 +374,54 @@ void Realtime::timerEvent(QTimerEvent *event) {
     glm::vec3 look_n = glm::normalize(m_renderData.cameraData.look);
     glm::vec3 up_n = glm::normalize(m_renderData.cameraData.up);
 
-    if (m_keyMap[Qt::Key_W]) {
+    if (m_keyMap[Qt::Key_I]) {
         translateCamera( look_n* 5.f *deltaTime );
     }
+
+    if (m_keyMap[Qt::Key_O]) {
+        translateCamera( -look_n* 5.f *deltaTime );
+    }
+
+    if (m_keyMap[Qt::Key_W]) {
+        glm::vec3 x_axis(1.0,0.0,0.0);
+        for (RenderShapeData &shape : m_renderData.shapes) {
+            if (shape.is_land) {
+                shape.ctm = glm::translate(shape.ctm, x_axis);
+            }
+        }
+    }
     if (m_keyMap[Qt::Key_S]) {
-        translateCamera(-look_n * 5.f *deltaTime );
+        glm::vec3 mx_axis(-1.0,0.0,0.0);
+        for (RenderShapeData &shape : m_renderData.shapes) {
+            if (shape.is_land) {
+                shape.ctm = glm::translate(shape.ctm, mx_axis);
+            }
+        }
     }
     if (m_keyMap[Qt::Key_A]) {
-        glm::vec4 dir = glm::vec4(glm::cross(glm::vec3(look_n),glm::vec3(up_n)),1.0f);
-        translateCamera( dir * 5.f *deltaTime );
+        glm::vec3 z_axis(0.0,0.0,1.0);
+        for (RenderShapeData &shape : m_renderData.shapes) {
+            if (shape.is_land) {
+                shape.ctm = glm::translate(shape.ctm, z_axis);
+            }
+        }
     }
     if (m_keyMap[Qt::Key_D]) {
-        glm::vec4 dir = glm::vec4(glm::cross(glm::vec3(look_n),glm::vec3(up_n)),1.0f);
-        translateCamera( -dir * 5.f *deltaTime );
+        glm::vec3 mz_axis(0.0,0.0,-1.0);
+        for (RenderShapeData &shape : m_renderData.shapes) {
+            if (shape.is_land) {
+                shape.ctm = glm::translate(shape.ctm, mz_axis);
+            }
+        }
     }
-    if (m_keyMap[Qt::Key_Space]) {
-        glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
-        translateCamera( dir * 5.f *deltaTime );
-    }
+    // if (m_keyMap[Qt::Key_Space]) {
+    //     glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
+    //     translateCamera( dir * 5.f *deltaTime );
+    // }
     // if (m_keyMap[Qt::Key_Control]) {
     //     glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
     //     translateCamera( -dir * 5.f *deltaTime );
     // }
-    // deactivated for the screen recording (command+shift+5)
 
     update(); // asks for a PaintGL() call to occur
 }

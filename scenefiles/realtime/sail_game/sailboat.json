@@ -241,6 +241,21 @@
               "shininess": 5.0
             }
           ]
+        },
+
+        {
+          "is_land": true,
+          "translate": [2.0, 0.0, 2.0],
+          "scale": [2.0, 2.0, 2.0],
+          "primitives": [
+            {
+              "type": "sphere",
+              "ambient": [1.0, 0.0, 0.0],
+              "diffuse": [1.0, 0.0, 0.0],
+              "specular": [1.0, 0.0, 0.0],
+              "shininess": 7.0
+            }
+          ]
         }
       ]
     }

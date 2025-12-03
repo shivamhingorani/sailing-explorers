@@ -44,6 +44,8 @@ void dfsPopulateRenderData(SceneNode* scene_root, std::vector<RenderShapeData>& 
     RenderShapeData tmpShape;
     tmpShape.ctm = ctm; //same for all
     tmpShape.i_ctm = glm::inverse(ctm);
+    tmpShape.is_land = scene_root->is_land;
+
     SceneLightData tmpLight;
 
     for (ScenePrimitive* primitive : scene_root->primitives){

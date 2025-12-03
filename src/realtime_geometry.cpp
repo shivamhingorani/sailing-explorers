@@ -78,6 +78,24 @@ void Realtime::rotateCamera(float angleRad, glm::vec3 axis) {
     updateViewMat();
 }
 
+glm::vec3 Realtime::rotateVector(glm::vec3 vec, float angleRad, glm::vec3 axis) {
+    axis = glm::normalize(axis);
+    float c = cos(angleRad);
+    float s = sin(angleRad);
+    float t = 1 - c;
+
+    glm::mat4 M_rot(
+        t*axis.x*axis.x + c,         t*axis.x*axis.y - s*axis.z,   t*axis.x*axis.z + s*axis.y,  0,
+        t*axis.x*axis.y + s*axis.z,  t*axis.y*axis.y + c,          t*axis.y*axis.z - s*axis.x,  0,
+        t*axis.x*axis.z - s*axis.y,  t*axis.y*axis.z + s*axis.x,   t*axis.z*axis.z + c,         0,
+        0,                           0,                            0,                           1
+        );
+
+    return M_rot*glm::vec4(vec,1.0);
+}
+
+
+
 
 void Realtime::updateViewMat(){
     SceneCameraData camData = m_renderData.cameraData;

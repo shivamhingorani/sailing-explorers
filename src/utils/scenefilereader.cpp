@@ -578,7 +578,7 @@ bool ScenefileReader::parseTemplateGroupData(const QJsonObject &templateGroup) {
  * NAME OF NODE CANNOT REFERENCE TEMPLATE NODE
  */
 bool ScenefileReader::parseGroupData(const QJsonObject &object, SceneNode *node) {
-    QStringList optionalFields = {"name", "translate", "rotate", "scale", "matrix", "lights", "primitives", "groups"};
+    QStringList optionalFields = {"name", "translate", "rotate", "scale", "matrix", "lights", "primitives", "groups","is_land"};
     QStringList allFields = optionalFields;
     for (auto &field : object.keys()) {
         if (!allFields.contains(field)) {
@@ -611,6 +611,14 @@ bool ScenefileReader::parseGroupData(const QJsonObject &object, SceneNode *node)
         translation->translate.z = translateArray[2].toDouble();
 
         node->transformations.push_back(translation);
+    }
+
+    if (object.contains("is_land")) {
+        if (!object["is_land"].isBool()) {
+            std::cout << "is_land must be a boolean" << std::endl;
+            return false;
+        }
+        node->is_land = object["is_land"].toBool();
     }
 
     // parse rotation if defined

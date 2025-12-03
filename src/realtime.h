@@ -107,6 +107,7 @@ private:
 
     void translateCamera(glm::vec3 dir);
     void rotateCamera(float angleRad, glm::vec3 axis);
+    glm::vec3 rotateVector(glm::vec3 vec, float angleRad, glm::vec3 axis);
 
     // QPoint m_prevMousePos;
     // float  m_angleX;

@@ -166,4 +166,6 @@ struct SceneNode {
     std::vector<ScenePrimitive*> primitives;
     std::vector<SceneLight*> lights;
     std::vector<SceneNode*> children;
+
+    bool is_land = false;
 };

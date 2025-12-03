@@ -148,19 +148,21 @@ void MainWindow::initialize() {
 
     // Extra Credit:
     ec1 = new QCheckBox();
-    ec1->setText(QStringLiteral("Extra Credit 1"));
+    ec1->setText(QStringLiteral("Show depth"));
+    std::cout << "Checkbox text is now: " << ec1->text().toStdString() << std::endl;
+
     ec1->setChecked(false);
 
     ec2 = new QCheckBox();
-    ec2->setText(QStringLiteral("Extra Credit 2"));
+    ec2->setText(QStringLiteral("Show x-speed"));
     ec2->setChecked(false);
 
     ec3 = new QCheckBox();
-    ec3->setText(QStringLiteral("Extra Credit 3"));
+    ec3->setText(QStringLiteral("Show y-speed"));
     ec3->setChecked(false);
 
     ec4 = new QCheckBox();
-    ec4->setText(QStringLiteral("Extra Credit 4"));
+    ec4->setText(QStringLiteral("Enable motion blur"));
     ec4->setChecked(false);
 
     vLayout->addWidget(uploadFile);
@@ -363,21 +365,21 @@ void MainWindow::onValChangeFarBox(double newValue) {
 // Extra Credit:
 
 void MainWindow::onExtraCredit1() {
-    settings.extraCredit1 = !settings.extraCredit1;
+    settings.show_depth = !settings.show_depth;
     realtime->settingsChanged();
 }
 
 void MainWindow::onExtraCredit2() {
-    settings.extraCredit2 = !settings.extraCredit2;
+    settings.show_velocity_x = !settings.show_velocity_x;
     realtime->settingsChanged();
 }
 
 void MainWindow::onExtraCredit3() {
-    settings.extraCredit3 = !settings.extraCredit3;
+    settings.show_velocity_y = !settings.show_velocity_y;
     realtime->settingsChanged();
 }
 
 void MainWindow::onExtraCredit4() {
-    settings.extraCredit4 = !settings.extraCredit4;
+    settings.enable_motion_blur = !settings.enable_motion_blur;
     realtime->settingsChanged();
 }

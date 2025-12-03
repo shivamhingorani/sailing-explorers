@@ -1,4 +1,4 @@
-# Install script for directory: /Users/edouard/Documents/US/Brown/CSCI_1230/proj5-edouardclocheret
+# Install script for directory: /Users/edouard/Documents/US/Brown/CSCI_1230/project-6-final-project-gear-up-edouardclocheret
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("/Users/edouard/Documents/US/Brown/CSCI_1230/proj5-edouardclocheret/build/build-projects_realtime-Qt_6_9_2_for_macOS-Release/glm/cmake_install.cmake")
+  include("/Users/edouard/Documents/US/Brown/CSCI_1230/project-6-final-project-gear-up-edouardclocheret/build/build-projects_realtime-Qt_6_9_2_for_macOS-Release/glm/cmake_install.cmake")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -57,6 +57,6 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-  file(WRITE "/Users/edouard/Documents/US/Brown/CSCI_1230/proj5-edouardclocheret/build/build-projects_realtime-Qt_6_9_2_for_macOS-Release/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "/Users/edouard/Documents/US/Brown/CSCI_1230/project-6-final-project-gear-up-edouardclocheret/build/build-projects_realtime-Qt_6_9_2_for_macOS-Release/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

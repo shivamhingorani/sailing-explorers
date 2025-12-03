@@ -5,9 +5,9 @@ if("${CONFIG}" STREQUAL "" OR "${CONFIG}" STREQUAL "Release")
   file(REMOVE_RECURSE
   "CMakeFiles/StaticGLEW_autogen.dir/AutogenUsed.txt"
   "CMakeFiles/StaticGLEW_autogen.dir/ParseCache.txt"
-  "CMakeFiles/projects_realtime_autogen.dir/AutogenUsed.txt"
-  "CMakeFiles/projects_realtime_autogen.dir/ParseCache.txt"
+  "CMakeFiles/final_gearup_autogen.dir/AutogenUsed.txt"
+  "CMakeFiles/final_gearup_autogen.dir/ParseCache.txt"
   "StaticGLEW_autogen"
-  "projects_realtime_autogen"
+  "final_gearup_autogen"
   )
 endif()

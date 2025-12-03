@@ -6,10 +6,6 @@
 #include <iostream>
 #include "settings.h"
 #include "src/shaderloader.h"
-#include "src/shapes/Cone.h"
-#include "src/shapes/Cube.h"
-#include "src/shapes/Cylinder.h"
-#include "src/shapes/Sphere.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -43,13 +39,35 @@ void Realtime::finish() {
     glDeleteBuffers(1, &m_vbo);
     glDeleteVertexArrays(1, &m_vao);
 
-    glDeleteProgram(m_shader);
-    this->doneCurrent();
+    glDeleteVertexArrays(1, &m_fullscreen_vao);
+    glDeleteBuffers(1, &m_fullscreen_vbo);
 
+    glDeleteProgram(m_shader);
+    glDeleteProgram(m_texture_shader);
+    glDeleteProgram(m_depth_shader);
+    glDeleteProgram(m_velocity_shader);
+    glDeleteProgram(m_motion_blur_shader);
+
+    glDeleteTextures(1, &m_fbo_scene_depth);
+    glDeleteTextures(1, &m_fbo_scene_texture);
+    glDeleteTextures(1, &m_fbo_depth_texture);
+    glDeleteTextures(1, &m_fbo_vel_texture);
+
+    glDeleteFramebuffers(1, &m_fbo_scene);
+    glDeleteFramebuffers(1, &m_fbo_depth);
+    glDeleteFramebuffers(1, &m_fbo_vel);
+
+    this->doneCurrent();
 }
 
 void Realtime::initializeGL() {
     m_devicePixelRatio = this->devicePixelRatio();
+    m_screen_width = size().width() * m_devicePixelRatio;
+    m_screen_height = size().height() * m_devicePixelRatio;
+    m_fbo_width = m_screen_width;
+    m_fbo_height = m_screen_height;
+
+    m_defaultFBO = 4;
 
     m_timer = startTimer(1000/60);
     m_elapsedTimer.start();
@@ -77,95 +95,107 @@ void Realtime::initializeGL() {
     m_shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert",
                                                  ":/resources/shaders/default.frag");
 
-    m_glReady = true;
+    m_texture_shader = ShaderLoader::createShaderProgram(":/resources/shaders/texture.vert", ":/resources/shaders/texture.frag");
 
+    m_depth_shader = ShaderLoader::createShaderProgram(":/resources/shaders/depth.vert",
+                                                       ":/resources/shaders/depth.frag");
+
+    m_velocity_shader = ShaderLoader::createShaderProgram(":/resources/shaders/velocity.vert",
+                                                       ":/resources/shaders/velocity.frag");
+
+    m_motion_blur_shader = ShaderLoader::createShaderProgram(":/resources/shaders/motion_blur.vert",
+                                                             ":/resources/shaders/motion_blur.frag");
+
+    rebuildGeometry();
+    updateProjMat();
+    updateViewMat();
+
+    std::vector<GLfloat> fullscreen_quad_data =
+        { //     POSITIONS    // +//UV//
+            -1.f,  1.f, 0.0f,
+            0.f,1.f,
+            -1.f, -1.f, 0.0f,
+            0.f,0.f,
+            1.f, -1.f, 0.0f,
+            1.f, 0.f,
+
+            -1.f,  1.f, 0.0f,
+            0.f,1.f,
+            1.f,  -1.f, 0.0f,
+            1.f, 0.f,
+            1.f, 1.f, 0.0f,
+            1.f,1.f
+        };
+
+    // Generate and bind a VBO and a VAO for a fullscreen quad
+    glGenBuffers(1, &m_fullscreen_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, m_fullscreen_vbo);
+    glBufferData(GL_ARRAY_BUFFER, fullscreen_quad_data.size()*sizeof(GLfloat), fullscreen_quad_data.data(), GL_STATIC_DRAW);
+    glGenVertexArrays(1, &m_fullscreen_vao);
+    glBindVertexArray(m_fullscreen_vao);
+
+    // Task 14: modify the code below to add a second attribute to the vertex attribute array
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*) (0* sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (void*) (3* sizeof(GLfloat)));
+
+
+    // Unbind the fullscreen quad's VBO and VAO
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    makeFBOs();
+
+    m_glReady = true;
 }
 
 void Realtime::paintGL() {
-    //if (m_renderData.shapes.empty()) return;
-    // Clear screen color and depth before painting
+    //puts depth and the regular phonged geometry in the scene fbo
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_scene);
+    glViewport(0,0,m_fbo_width, m_fbo_height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    // Bind Sphere Vertex Data
-    glBindVertexArray(m_vao);
 
-    // Task 2: activate the shader program by calling glUseProgram with `m_shader`
-    glUseProgram(m_shader);
+    paintGeometry();
 
-    // Task 6: pass in m_model as a uniform into the shader program
+    glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
 
-    // Task 7: pass in m_view and m_proj
+    if (settings.show_depth) {
+        // 1. Paint depth as colors in my depth buffer texture
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_depth);
+        glViewport(0,0,m_fbo_width, m_fbo_height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    //test
+        paintDepth();
 
+        glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
 
+        // 2. Paint depth on the screen
+        paintTexture(m_fbo_depth_texture, false);
 
-    GLint viewLocation = glGetUniformLocation(m_shader, "view_mat");
-    glUniformMatrix4fv(viewLocation, 1, GL_FALSE, &m_view[0][0]);
-    GLint projLocation = glGetUniformLocation(m_shader, "proj_mat");
-    glUniformMatrix4fv(projLocation, 1, GL_FALSE, &m_proj[0][0]);
-
-    //global ka kd ks
-
-    // Task 12: pass m_ka into the fragment shader as a uniform
-    GLint kaLocation = glGetUniformLocation(m_shader, "ka");
-    glUniform1f(kaLocation, m_renderData.globalData.ka);
-
-    // Task 13: pass light position and m_kd into the fragment shader as a uniform
-    GLint kdLocation = glGetUniformLocation(m_shader, "kd");
-    glUniform1f(kdLocation, m_renderData.globalData.kd);
-
-    //create a struct for 8 lights
-
-    make_light_uniforms();
-
-    GLint camLocation = glGetUniformLocation(m_shader, "cam_pos");
-    glm::vec4 cam_position = m_renderData.cameraData.pos;
-    glUniform4fv(camLocation, 1, &cam_position[0]);
-
-
-    // Task 14: pass shininess, m_ks, and world-space camera position
-    GLint ksLocation = glGetUniformLocation(m_shader, "ks");
-    glUniform1f(ksLocation, m_renderData.globalData.ks);
-
-
-    int index =0;
-    int offset=0;
-    for (const RenderShapeData &shape : m_renderData.shapes){
-        m_model = shape.ctm;
-        m_normal_mat = glm::inverse(glm::transpose(glm::mat3(m_model)));
-
-        GLint modelLocation = glGetUniformLocation(m_shader, "model_mat");
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, &m_model[0][0]);
-
-        GLint normMatLocation = glGetUniformLocation(m_shader,"normal_mat");
-        glUniformMatrix3fv(normMatLocation, 1, GL_FALSE, &m_normal_mat[0][0]);
-
-        GLint cAmbLocation = glGetUniformLocation(m_shader, "cAmbient");
-        glUniform3fv(cAmbLocation, 1, &shape.primitive.material.cAmbient[0]);
-
-        GLint cDifLocation = glGetUniformLocation(m_shader, "cDiffuse");
-        glUniform3fv(cDifLocation, 1, &shape.primitive.material.cDiffuse[0]);
-
-        GLint cSpeLocation = glGetUniformLocation(m_shader, "cSpecular");
-        glUniform3fv(cSpeLocation, 1, &shape.primitive.material.cSpecular[0]);
-
-        GLint nLocation = glGetUniformLocation(m_shader, "n");
-        glUniform1f(nLocation, shape.primitive.material.shininess);
-
-        // Draw Command
-        int verts = m_sizes_v_m_shapesData[index] / 6;
-        glDrawArrays(GL_TRIANGLES, offset, verts);
-        index++;
-        offset+= verts;
     }
+    else if (settings.show_velocity_x || settings.show_velocity_y){
+        // 1. Paint in my velocity buffer as colors in a texture
+        glBindFramebuffer(GL_FRAMEBUFFER, m_fbo_vel);
+        glViewport(0,0,m_fbo_width, m_fbo_height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // Unbind Vertex Array
-    glBindVertexArray(0);
+        paintVel(settings.show_velocity_x);
 
-    // Task 3: deactivate the shader program by passing 0 into glUseProgram
-    glUseProgram(0);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_defaultFBO);
 
+        // 2. Paint depth on the screen
+        paintTexture(m_fbo_vel_texture, false);
+    }
+    else if (settings.enable_motion_blur){
+        paintBlurredScene();
+    }
+    else{
+        paintTexture(m_fbo_scene_texture, false);
+    }
 }
+
+
 
 void Realtime::resizeGL(int w, int h) {
     // Tells OpenGL how big the screen is
@@ -180,7 +210,6 @@ void Realtime::resizeGL(int w, int h) {
 }
 
 void Realtime::sceneChanged() {
-    std::cout<<m_lights4GPU.size()<<std::endl;
     m_lights4GPU.clear();
     SceneParser::parse(settings.sceneFilePath, m_renderData);
     //if (m_glReady){
@@ -195,12 +224,10 @@ void Realtime::sceneChanged() {
 
 
 void Realtime::settingsChanged() {
-    std::cout<<m_lights4GPU.size()<<std::endl;
     m_lights4GPU.clear();
 
     //if (m_glReady){
         rebuildGeometry();
-        std::cout<<"after rebuild" <<m_lights4GPU.size()<<std::endl;
         updateProjMat();
         updateViewMat();
 
@@ -230,8 +257,6 @@ void Realtime::rebuildGeometry() {
     if (m_vao == 0) {
         glGenVertexArrays(1, &m_vao);
     }
-    std::cout<<"vao "<< m_vao<<std::endl;
-    std::cout<<"vbo "<< m_vbo<<std::endl;
     glBindVertexArray(m_vao);
 
     if (m_vbo == 0) {
@@ -329,10 +354,11 @@ void Realtime::timerEvent(QTimerEvent *event) {
         glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
         translateCamera( dir * 5.f *deltaTime );
     }
-    if (m_keyMap[Qt::Key_Control]) {
-        glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
-        translateCamera( -dir * 5.f *deltaTime );
-    }
+    // if (m_keyMap[Qt::Key_Control]) {
+    //     glm::vec4 dir = glm::vec4(0.f, 1.f,0.f,1.0f);
+    //     translateCamera( -dir * 5.f *deltaTime );
+    // }
+    // deactivated for the screen recording (command+shift+5)
 
     update(); // asks for a PaintGL() call to occur
 }
@@ -401,168 +427,3 @@ void Realtime::saveViewportImage(std::string filePath) {
     glDeleteFramebuffers(1, &fbo);
 }
 
-void Realtime::updateProjMat(){
-    float n = settings.nearPlane;
-    float f = settings.farPlane;
-    float c = -n/f;
-
-    float thetaH = m_renderData.cameraData.heightAngle;
-    float aspectRatio = (float)width() /(float)height();
-
-
-    glm::mat4 gl_convention(1.f,0.f,0.f,0.f,
-                              0.f,1.f,0.f,0.f,
-                              0.f,0.f,-2.f,0.f,
-                              0.f,0.f,-1.f,1.f);
-
-    glm::mat4 unhinge(
-        1.f, 0.f, 0.f, 0.f,
-        0.f, 1.f, 0.f, 0.f,
-        0.f, 0.f, 1.f/(1.f+c), -1.f,
-        0.f, 0.f, -c/(1.f+c), 0.f
-        );
-
-    glm::mat4 scaling_perspective(
-        1.f / (f*aspectRatio * tan(thetaH * 0.5f)), 0, 0, 0,
-        0, 1.f / (f*tan(thetaH * 0.5f)), 0, 0,
-        0, 0, 1.f/f, 0,
-        0, 0, 0, 1.f
-        );
-
-
-    m_proj = gl_convention*unhinge*scaling_perspective;
-
-}
-
-void Realtime::translateCamera(glm::vec3 dir){
-
-
-    glm::mat4 M_trans = glm::mat4(1.f,0.f,0.f,0.f,
-                                  0.f,1.f,0.f,0.f,
-                                  0.f,0.f,1.f,0.f,
-                                  dir.x,dir.y,dir.z,1.f);
-    m_renderData.cameraData.pos = M_trans * m_renderData.cameraData.pos;
-    m_renderData.cameraData.look = M_trans * m_renderData.cameraData.look;
-    m_renderData.cameraData.up = M_trans * m_renderData.cameraData.up;
-    updateViewMat();
-}
-
-void Realtime::rotateCamera(float angleRad, glm::vec3 axis) {
-    axis = glm::normalize(axis);
-    float c = cos(angleRad);
-    float s = sin(angleRad);
-    float t = 1 - c;
-
-    glm::mat4 M_rot(
-        t*axis.x*axis.x + c,         t*axis.x*axis.y - s*axis.z,   t*axis.x*axis.z + s*axis.y,  0,
-        t*axis.x*axis.y + s*axis.z,  t*axis.y*axis.y + c,          t*axis.y*axis.z - s*axis.x,  0,
-        t*axis.x*axis.z - s*axis.y,  t*axis.y*axis.z + s*axis.x,   t*axis.z*axis.z + c,         0,
-        0,                           0,                            0,                           1
-        );
-
-    m_renderData.cameraData.look = M_rot * m_renderData.cameraData.look;
-    m_renderData.cameraData.up   = M_rot * m_renderData.cameraData.up;
-
-    updateViewMat();
-}
-
-
-void Realtime::updateViewMat(){
-    SceneCameraData camData = m_renderData.cameraData;
-    m_camera = Camera(camData.pos, camData.look, camData.up);
-    m_view = m_camera.viewMat;
-
-}
-
-std::vector<float> Realtime::generateShapeData(RenderShapeData& shape_to_add,
-                                                   GLuint param1, GLuint param2)
-    {
-        std::unique_ptr<Shape> shape;
-
-        switch (shape_to_add.primitive.type) {
-        case PrimitiveType::PRIMITIVE_CUBE:
-            shape = std::make_unique<Cube>();
-            break;
-        case PrimitiveType::PRIMITIVE_CONE:
-            shape = std::make_unique<Cone>();
-            break;
-        case PrimitiveType::PRIMITIVE_CYLINDER:
-            shape = std::make_unique<Cylinder>();
-            break;
-        case PrimitiveType::PRIMITIVE_SPHERE:
-            shape = std::make_unique<Sphere>();
-            break;
-        default:
-            return {};
-        }
-        shape->setVertexData(param1, param2);
-
-        return shape->m_vertexData;
-    }
-
-void Realtime::parse_lights (std::vector<SceneLightData>& lights){
-    //empty the previous lights
-    m_lights4GPU.clear();
-
-    int i =0;
-    for (SceneLightData light : lights){
-        m_lights4GPU.push_back(Light4GPU());
-
-        m_lights4GPU[i].valid = 1;
-        m_lights4GPU[i].type = int(light.type);
-        m_lights4GPU[i].color = light.color;
-        m_lights4GPU[i].function = light.function;
-        switch (light.type){
-        case(LightType::LIGHT_POINT):
-            m_lights4GPU[i].pos = light.pos;
-            break;
-        case(LightType::LIGHT_DIRECTIONAL):
-            m_lights4GPU[i].dir = light.dir;
-            break;
-        case(LightType::LIGHT_SPOT):
-            m_lights4GPU[i].pos = light.pos;
-            m_lights4GPU[i].dir = light.dir;
-            m_lights4GPU[i].penumbra = light.penumbra;
-            m_lights4GPU[i].angle = light.angle;
-            break;
-        }
-        i++;
-    }
-}
-
-void Realtime::make_light_uniforms(){
-
-    for (int j = 0; j < 8; j++) {
-        auto sendInt = [&](std::string name, int value){
-            GLint loc = glGetUniformLocation(m_shader, name.c_str());
-            glUniform1i(loc, value);
-        };
-
-        auto sendFloat = [&](std::string name, float value){
-            GLint loc = glGetUniformLocation(m_shader, name.c_str());
-            glUniform1f(loc, value);
-        };
-
-        auto sendVec3 = [&](std::string name, const glm::vec3 &v){
-            GLint loc = glGetUniformLocation(m_shader, name.c_str());
-            glUniform3f(loc, v.x, v.y, v.z);
-        };
-
-        if (j>=m_lights4GPU.size()){
-            sendInt("lights_8[" + std::to_string(j) + "].valid", 0);
-            continue;
-        }
-
-
-        const Light4GPU &L = m_lights4GPU[j];
-
-        sendInt("lights_8[" + std::to_string(j) + "].valid", L.valid);
-        sendInt("lights_8[" + std::to_string(j) + "].type", L.type);
-        sendVec3("lights_8[" + std::to_string(j) + "].color", L.color);
-        sendVec3("lights_8[" + std::to_string(j) + "].function", L.function);
-        sendVec3("lights_8[" + std::to_string(j) + "].pos", L.pos);
-        sendVec3("lights_8[" + std::to_string(j) + "].dir", L.dir);
-        sendFloat("lights_8[" + std::to_string(j) + "].penumbra", L.penumbra);
-        sendFloat("lights_8[" + std::to_string(j) + "].angle", L.angle);
-    }
-}

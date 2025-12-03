@@ -66,16 +66,29 @@ private:
     // Device Correction Variables
     double m_devicePixelRatio;
 
+    GLuint m_defaultFBO;
+    int m_fbo_width;
+    int m_fbo_height;
+    int m_screen_width;
+    int m_screen_height;
+
     RenderData m_renderData;
     Camera m_camera; //has the attribute m_camera.inv_view
     glm::mat4 m_model = glm::mat4(1);
     glm::mat4 m_view  = glm::mat4(1);
     glm::mat4 m_proj  = glm::mat4(1);
 
+    glm::mat4 m_vpmat = glm::mat4(1); //projection view matrix
+    glm::mat4 m_previous_vpmat = glm::mat4(1);
+
     void updateProjMat();
     void updateViewMat();
 
     GLuint m_shader;     // Stores id of shader program
+    GLuint m_depth_shader;
+    GLuint m_velocity_shader;
+    GLuint m_motion_blur_shader;
+
     GLuint m_vbo=0; // Stores id of vbo
     GLuint m_vao =0; // Stores id of vao
 
@@ -99,4 +112,37 @@ private:
     // float  m_angleX;
     // float  m_angleY;
     // float  m_zoom;
+
+    GLuint m_texture_shader;
+    GLuint m_fullscreen_vbo;
+    GLuint m_fullscreen_vao;
+
+    GLuint m_fbo_scene;
+    GLuint m_fbo_scene_texture;
+    GLuint m_fbo_scene_depth;
+    void makeSceneFBO();
+
+    GLuint m_fbo_depth;
+    GLuint m_fbo_depth_texture;
+    void makeDepthFBO();
+
+    GLuint m_fbo_vel;
+    GLuint m_fbo_vel_texture; //color texture has two channels, first for x, second for y
+    void makeVelFBO();
+
+
+
+    void initialize_textures();
+    void makeFBOs();
+
+
+    void paintGeometry();//default scene
+    void paintTexture(GLuint texture, bool post_process);
+    void paintDepth();
+    void paintVel(bool show_in_x);
+    void paintBlurredScene();
+
+
+
+
 };

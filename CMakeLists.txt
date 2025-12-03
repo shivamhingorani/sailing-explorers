@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Sets project name
-project(projects_realtime LANGUAGES CXX C)
+project(saling_explorers LANGUAGES CXX C)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -14,16 +14,19 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Specifies required Qt components
-find_package(Qt6 REQUIRED COMPONENTS Core)
-find_package(Qt6 REQUIRED COMPONENTS Gui)
-find_package(Qt6 REQUIRED COMPONENTS OpenGL)
-find_package(Qt6 REQUIRED COMPONENTS OpenGLWidgets)
-find_package(Qt6 REQUIRED COMPONENTS Xml)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui OpenGL OpenGLWidgets Xml)
 
-# Allows you to include files from within those directories, without prefixing their filepaths
+# Allows you to include files from within those directories
 include_directories(src)
 
-# Specifies .cpp and .h files to be passed to the compiler
+# GLM
+add_subdirectory(glm)
+
+# GLEW (static)
+add_library(StaticGLEW STATIC glew/src/glew.c)
+target_include_directories(StaticGLEW PUBLIC glew/include)
+
+# Main executable sources + headers
 add_executable(${PROJECT_NAME}
     src/main.cpp
 
@@ -41,27 +44,27 @@ add_executable(${PROJECT_NAME}
     src/utils/sceneparser.h
     src/utils/shaderloader.h
     src/utils/aspectratiowidget/aspectratiowidget.hpp
-    src/utils/camera.h src/utils/camera.cpp
+    src/utils/camera.h
+    src/utils/camera.cpp
 
     src/shapes/Cone.cpp src/shapes/Cone.h
     src/shapes/Cube.cpp src/shapes/Cube.h
     src/shapes/Tet.cpp src/shapes/Tet.h
     src/shapes/Cylinder.cpp src/shapes/Cylinder.h
+    src/shapes/Cylinder.cpp src/shapes/Cylinder.h
+    src/shapes/Cylinder.cpp src/shapes/Cylinder.h
     src/shapes/Sphere.cpp src/shapes/Sphere.h
-    src/shaderloader.h
     src/shapes/shape.h
 
+    src/shaderloader.h
+    src/shapes/shape.h
+    src/realtime_paint.cpp
+    src/realtime_geometry.cpp
+    src/realtime_lights.cpp
+    src/realtime_fbo.cpp
 )
 
-# GLM: this creates its library and allows you to `#include "glm/..."`
-add_subdirectory(glm)
-
-# GLEW: this creates its library and allows you to `#include "GL/glew.h"`
-add_library(StaticGLEW STATIC glew/src/glew.c
-)
-include_directories(${PROJECT_NAME} PRIVATE glew/include)
-
-# Specifies libraries to be linked (Qt components, glew, etc)
+# Link Qt + OpenGL + GLEW
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt::Core
     Qt::Gui
@@ -71,29 +74,33 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     StaticGLEW
 )
 
-# Specifies other files
+# Qt resources (shaders, etc)
 qt6_add_resources(${PROJECT_NAME} "Resources"
-    PREFIX
-        "/"
+    PREFIX "/"
     FILES
         resources/shaders/default.frag
         resources/shaders/default.vert
+        resources/shaders/texture.frag
+        resources/shaders/texture.vert
+        resources/shaders/velocity.frag
+        resources/shaders/velocity.vert
+        resources/shaders/motion_blur.frag
+        resources/shaders/motion_blur.vert
+        resources/shaders/depth.frag
+        resources/shaders/depth.vert
 )
 
-# GLEW: this provides support for Windows (including 64-bit)
+# Windows OpenGL support if needed
 if (WIN32)
   add_compile_definitions(GLEW_STATIC)
-  target_link_libraries(${PROJECT_NAME} PRIVATE
-    opengl32
-    glu32
-  )
+  target_link_libraries(${PROJECT_NAME} PRIVATE opengl32 glu32)
 endif()
 
-# Set this flag to silence warnings on Windows
+# Silence warnings for volatiles
 if (MSVC OR MSYS OR MINGW)
-  set(CMAKE_CXX_FLAGS "-Wno-volatile")
+  add_compile_options(-Wno-volatile)
 endif()
-# Set this flag to silence warnings on MacOS
+
 if (APPLE)
-  set(CMAKE_CXX_FLAGS "-Wno-deprecated-volatile")
+  add_compile_options(-Wno-deprecated-volatile)
 endif()

@@ -15,6 +15,10 @@ struct Settings {
     bool extraCredit2 = false;
     bool extraCredit3 = false;
     bool extraCredit4 = false;
+    bool show_depth = false; //has replaced extra credit 1!!!
+    bool show_velocity_x =false; //has replaced extra credit 2!!!
+    bool show_velocity_y =false; //has replaced extra credit 3!!!
+    bool enable_motion_blur = false; //has replaced extra credit 4!!!
 };
 
 

@@ -1,4 +1,4 @@
-# Install script for directory: /Users/edouard/Documents/US/Brown/CSCI_1230/proj5-edouardclocheret/glm
+# Install script for directory: /Users/edouard/Documents/US/Brown/CSCI_1230/project-6-final-project-gear-up-edouardclocheret/glm
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

@@ -57,6 +57,7 @@ private:
     // Tick Related Variables
     int m_timer;                                        // Stores timer which attempts to run ~60 times per second
     QElapsedTimer m_elapsedTimer;                       // Stores timer which keeps track of actual time between frames
+    QElapsedTimer m_cumulativeTimer;
 
     // Input Related Variables
     bool m_mouseDown = false;                           // Stores state of left mouse button
@@ -89,8 +90,17 @@ private:
     GLuint m_velocity_shader;
     GLuint m_motion_blur_shader;
 
+    GLuint m_sea_shader;
+
     GLuint m_vbo=0; // Stores id of vbo
     GLuint m_vao =0; // Stores id of vao
+
+    GLuint m_floorVAO = 0;
+    GLuint m_floorVBO = 0;
+    GLuint m_floorTexture = 0;
+
+    void initializeFloor();
+    void paintFloor();
 
     //optimization
     glm::mat3 m_normal_mat;
@@ -100,7 +110,9 @@ private:
     std::vector<int> m_sizes_v_m_shapesData;
     std::vector<Light4GPU> m_lights4GPU;
     void parse_lights (std::vector<SceneLightData>& lights);
-    void make_light_uniforms();
+    void make_light_uniforms(GLuint m_shader);
+
+    std::vector<GLfloat> generateFloorData(float size);
 
     void rebuildGeometry();
     bool m_glReady = false; //cannot rebuild geometry before initialize gl ran

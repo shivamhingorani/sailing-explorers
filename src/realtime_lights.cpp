@@ -38,7 +38,7 @@ void Realtime::parse_lights (std::vector<SceneLightData>& lights){
     }
 }
 
-void Realtime::make_light_uniforms(){
+void Realtime::make_light_uniforms(GLuint m_shader){
 
     for (int j = 0; j < 8; j++) {
         auto sendInt = [&](std::string name, int value){

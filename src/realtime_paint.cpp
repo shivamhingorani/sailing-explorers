@@ -96,6 +96,10 @@ void Realtime::paintGeometry(){
     // Clear screen color and depth before painting
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     // Bind Sphere Vertex Data
+
+
+    paintFloor();
+
     glBindVertexArray(m_vao);
 
     // Task 2: activate the shader program by calling glUseProgram with `m_shader`
@@ -122,7 +126,7 @@ void Realtime::paintGeometry(){
 
     //create a struct for 8 lights
 
-    make_light_uniforms();
+    make_light_uniforms(m_shader);
 
     GLint camLocation = glGetUniformLocation(m_shader, "cam_pos");
     glm::vec4 cam_position = m_renderData.cameraData.pos;
@@ -170,4 +174,62 @@ void Realtime::paintGeometry(){
 
     // Task 3: deactivate the shader program by passing 0 into glUseProgram
     glUseProgram(0);
+
 }
+
+
+void Realtime::paintFloor() {
+
+    glUseProgram(m_sea_shader);
+
+    glm::mat4 model = glm::mat4(1.0f);
+    glUniformMatrix4fv(glGetUniformLocation(m_sea_shader, "model"),
+                       1, GL_FALSE, &model[0][0]);
+
+    glUniformMatrix4fv(glGetUniformLocation(m_sea_shader, "view"),
+                       1, GL_FALSE, &m_view[0][0]);
+
+    glUniformMatrix4fv(glGetUniformLocation(m_sea_shader, "projection"),
+                       1, GL_FALSE, &m_proj[0][0]);
+
+    glm::mat3 normalMat = glm::inverse(glm::transpose(glm::mat3(model)));
+    glUniformMatrix3fv(glGetUniformLocation(m_sea_shader, "normal_mat"),
+                       1, GL_FALSE, &normalMat[0][0]);
+
+    make_light_uniforms(m_sea_shader);
+
+    glUniform1f(glGetUniformLocation(m_sea_shader, "ka"),
+                m_renderData.globalData.ka);
+    glUniform1f(glGetUniformLocation(m_sea_shader, "kd"),
+                m_renderData.globalData.kd);
+    glUniform1f(glGetUniformLocation(m_sea_shader, "ks"),
+                m_renderData.globalData.ks);
+
+    float time = m_cumulativeTimer.elapsed()*0.00004; //adapting the scroll speed
+    glUniform1f(glGetUniformLocation(m_sea_shader, "u_time"), time);
+
+    glm::vec3 cAmbient(0.0, 0.56,1.0);
+    glm::vec3 cDiffuse(0.0, 0.56,1.0);
+    glm::vec3 cSpecular(0.0, 0.56,1.0);
+    float shininess = 5.0;
+    glUniform3fv(glGetUniformLocation(m_sea_shader, "cAmbient"), 1, &cAmbient[0]);
+    glUniform3fv(glGetUniformLocation(m_sea_shader, "cDiffuse"), 1, &cDiffuse[0]);
+    glUniform3fv(glGetUniformLocation(m_sea_shader, "cSpecular"), 1, &cSpecular[0]);
+    glUniform1f(glGetUniformLocation(m_sea_shader, "n"), shininess);
+
+    glm::vec4 camPos = m_renderData.cameraData.pos;
+    glUniform4fv(glGetUniformLocation(m_sea_shader, "cam_pos"),
+                 1, &camPos[0]);
+
+    glBindVertexArray(m_floorVAO);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D,m_floorTexture);
+    GLuint samplerLoc = glGetUniformLocation(m_sea_shader, "texture_sampler");
+    glUniform1i(samplerLoc, 0);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glUseProgram(0);
+}
+

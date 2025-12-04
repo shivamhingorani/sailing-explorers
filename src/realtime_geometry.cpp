@@ -11,7 +11,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-
+#include <iostream>
 
 void Realtime::updateProjMat(){
     float n = settings.nearPlane;
@@ -129,3 +129,73 @@ std::vector<float> Realtime::generateShapeData(RenderShapeData& shape_to_add,
 
     return shape->m_vertexData;
 }
+
+std::vector<GLfloat> Realtime::generateFloorData(float size) {
+    const float nx = 0.0f, ny = 1.0f, nz = 0.0f;
+
+    return {
+        //   position          normal            uv
+        size, 0.0f,  size,     nx, ny, nz,      1.0f, 1.0f,
+        size, 0.0f, -size,     nx, ny, nz,      1.0f, 0.0f,
+        -size, 0.0f, -size,     nx, ny, nz,      0.0f, 0.0f,
+
+        -size, 0.0f,  size,     nx, ny, nz,      0.0f, 1.0f,
+        size, 0.0f,  size,     nx, ny, nz,      1.0f, 1.0f,
+        -size, 0.0f, -size,     nx, ny, nz,      0.0f, 0.0f
+    };
+}
+
+
+
+void Realtime::initializeFloor(){
+    glGenVertexArrays(1, &m_floorVAO);
+    glGenBuffers(1, &m_floorVBO);
+
+    glBindVertexArray(m_floorVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, m_floorVBO);
+
+    auto floorData = generateFloorData(200.0f);
+    glBufferData(GL_ARRAY_BUFFER, floorData.size() * sizeof(GLfloat),
+                 floorData.data(), GL_STATIC_DRAW);
+
+    const GLsizei stride = 8 * sizeof(GLfloat);
+
+    // Position (location = 0)
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+
+    // Normal (location = 1)
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride,
+                          (void*)(3 * sizeof(GLfloat)));
+
+    // UV (location = 2)
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride,
+                          (void*)(6 * sizeof(GLfloat)));
+
+    glBindVertexArray(0);
+
+    QImage img(":/resources/textures/water-normal-texture-3.jpg");
+    if (img.isNull()) {
+        std::cerr << "Failed to load floor texture!" << std::endl;
+    }
+    img = img.convertToFormat(QImage::Format_RGBA8888);
+
+    glGenTextures(1, &m_floorTexture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_floorTexture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, img.width(), img.height(), 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, img.bits());
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+

@@ -82,12 +82,18 @@ qt6_add_resources(${PROJECT_NAME} "Resources"
         resources/shaders/default.vert
         resources/shaders/texture.frag
         resources/shaders/texture.vert
+        resources/shaders/sea.frag
+        resources/shaders/sea.vert
         resources/shaders/velocity.frag
         resources/shaders/velocity.vert
         resources/shaders/motion_blur.frag
         resources/shaders/motion_blur.vert
         resources/shaders/depth.frag
         resources/shaders/depth.vert
+        # resources/textures/wave-normal-texture.jpg
+        # resources/textures/water-normal-texture.jpg
+        # resources/textures/water-normal-texture-2.jpg
+        resources/textures/water-normal-texture-3.jpg
 )
 
 # Windows OpenGL support if needed

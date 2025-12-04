@@ -71,6 +71,7 @@ void Realtime::initializeGL() {
 
     m_timer = startTimer(1000/60);
     m_elapsedTimer.start();
+    m_cumulativeTimer.start();
 
     // Initializing GL.
     // GLEW (GL Extension Wrangler) provides access to OpenGL functions.
@@ -90,7 +91,7 @@ void Realtime::initializeGL() {
 
     // Students: anything requiring OpenGL calls when the program starts should be done here
     // Set clear color to black
-    glClearColor(0,0,0,1);
+    glClearColor(0.522, 0.851, 1.0, 1.0);
 
     m_shader = ShaderLoader::createShaderProgram(":/resources/shaders/default.vert",
                                                  ":/resources/shaders/default.frag");
@@ -105,10 +106,13 @@ void Realtime::initializeGL() {
 
     m_motion_blur_shader = ShaderLoader::createShaderProgram(":/resources/shaders/motion_blur.vert",
                                                              ":/resources/shaders/motion_blur.frag");
-
+    m_sea_shader = ShaderLoader::createShaderProgram(":/resources/shaders/sea.vert",
+                                                     ":/resources/shaders/sea.frag");
     rebuildGeometry();
     updateProjMat();
     updateViewMat();
+
+    initializeFloor();
 
     std::vector<GLfloat> fullscreen_quad_data =
         { //     POSITIONS    // +//UV//
@@ -383,14 +387,14 @@ void Realtime::timerEvent(QTimerEvent *event) {
 
     glm::vec3 look_n = glm::normalize(m_renderData.cameraData.look);
 
-    if (m_keyMap[Qt::Key_I])
+    if (m_keyMap[Qt::Key_I] )
         translateCamera(glm::vec4(look_n * 5.f * deltaTime, 0.f));
     if (m_keyMap[Qt::Key_O])
         translateCamera(glm::vec4(-look_n * 5.f * deltaTime, 0.f));
 
 
-    if (m_keyMap[Qt::Key_W] || m_keyMap[Qt::Key_S]) {
-        float yaw = (m_keyMap[Qt::Key_W] ? +1.f : -1.f) * deltaTime * 3.5f;
+    if (m_keyMap[Qt::Key_Left]|| m_keyMap[Qt::Key_Right]) {
+        float yaw = (m_keyMap[Qt::Key_Left] ? +1.f : -1.f) * deltaTime * 3.5f;
         m_boatCTM = rotateAroundLocalY(m_boatCTM, yaw);
     }
 
